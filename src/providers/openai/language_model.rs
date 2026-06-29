@@ -173,6 +173,7 @@ impl<M: ModelName> LanguageModel for OpenAI<M> {
                                 result.push(LanguageModelStreamChunk::Done(AssistantMessage {
                                     content: LanguageModelResponseContentType::new(text.clone()),
                                     usage: Some(usage.clone()),
+                                    reasoning_content: None,
                                 }));
                             }
                         }
@@ -186,6 +187,7 @@ impl<M: ModelName> LanguageModel for OpenAI<M> {
                                         extensions: crate::extensions::Extensions::default(),
                                     },
                                     usage: Some(usage.clone()),
+                                    reasoning_content: None,
                                 }));
                             }
                         }
@@ -204,6 +206,7 @@ impl<M: ModelName> LanguageModel for OpenAI<M> {
                             result.push(LanguageModelStreamChunk::Done(AssistantMessage {
                                 content: LanguageModelResponseContentType::ToolCall(tool_info),
                                 usage: Some(usage.clone()),
+                                reasoning_content: None,
                             }));
                         }
 

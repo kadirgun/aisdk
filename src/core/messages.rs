@@ -139,6 +139,9 @@ pub struct AssistantMessage {
     pub content: LanguageModelResponseContentType,
     /// Optional usage statistics for the response.
     pub usage: Option<Usage>,
+    /// Reasoning/thinking content (e.g. DeepSeek's `reasoning_content`).
+    /// Some providers require this to be sent back in subsequent requests.
+    pub reasoning_content: Option<String>,
 }
 
 impl From<String> for AssistantMessage {
@@ -146,6 +149,7 @@ impl From<String> for AssistantMessage {
         Self {
             content: value.into(),
             usage: None,
+            reasoning_content: None,
         }
     }
 }
@@ -153,7 +157,24 @@ impl From<String> for AssistantMessage {
 impl AssistantMessage {
     /// Creates a new assistant message with the given content and usage.
     pub fn new(content: LanguageModelResponseContentType, usage: Option<Usage>) -> Self {
-        Self { content, usage }
+        Self {
+            content,
+            usage,
+            reasoning_content: None,
+        }
+    }
+
+    /// Creates a new assistant message with content, usage, and reasoning content.
+    pub fn with_reasoning(
+        content: LanguageModelResponseContentType,
+        usage: Option<Usage>,
+        reasoning_content: Option<String>,
+    ) -> Self {
+        Self {
+            content,
+            usage,
+            reasoning_content,
+        }
     }
 }
 

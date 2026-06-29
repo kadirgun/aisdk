@@ -82,6 +82,7 @@ impl<M: ModelName> LanguageModel for OpenAIChatCompletions<M> {
         // Track open text / reasoning blocks so we can emit the matching End events
         let mut text_open = false;
         let mut reasoning_open = false;
+        let mut accumulated_reasoning = String::new();
 
         // Map stream events to SDK stream chunks
         let stream = stream.map(move |evt_res| match evt_res {
@@ -99,6 +100,7 @@ impl<M: ModelName> LanguageModel for OpenAIChatCompletions<M> {
                                 LanguageModelStreamChunkType::ReasoningStart,
                             ));
                         }
+                        accumulated_reasoning.push_str(&reasoning);
                         results.push(LanguageModelStreamChunk::Delta(
                             LanguageModelStreamChunkType::ReasoningDelta(reasoning),
                         ));
@@ -205,6 +207,10 @@ impl<M: ModelName> LanguageModel for OpenAIChatCompletions<M> {
                                 results.push(LanguageModelStreamChunk::Done(AssistantMessage {
                                     content: LanguageModelResponseContentType::Text(String::new()),
                                     usage,
+                                    reasoning_content: {
+                                        let r = std::mem::take(&mut accumulated_reasoning);
+                                        if r.is_empty() { None } else { Some(r) }
+                                    },
                                 }));
                             }
                             "length" => {
@@ -228,10 +234,20 @@ impl<M: ModelName> LanguageModel for OpenAIChatCompletions<M> {
                                 results.push(LanguageModelStreamChunk::Done(AssistantMessage {
                                     content: LanguageModelResponseContentType::Text(String::new()),
                                     usage,
+                                    reasoning_content: {
+                                        let r = std::mem::take(&mut accumulated_reasoning);
+                                        if r.is_empty() { None } else { Some(r) }
+                                    },
                                 }));
                             }
                             "tool_calls" | "function_call" => {
                                 // Send accumulated tool calls
+                                // Capture reasoning_content once, before the loop, so it's
+                                // included on every Done(ToolCall) chunk (not just the first).
+                                let reasoning_take = {
+                                    let r = std::mem::take(&mut accumulated_reasoning);
+                                    if r.is_empty() { None } else { Some(r) }
+                                };
                                 for (index, (id, name, args)) in &accumulated_tool_calls {
                                     let resolved_id = if id.is_empty() {
                                         format!("openai-tool-call-{index}")
@@ -255,6 +271,7 @@ impl<M: ModelName> LanguageModel for OpenAIChatCompletions<M> {
                                                 tool_info,
                                             ),
                                             usage: usage.clone(),
+                                            reasoning_content: reasoning_take.clone(),
                                         },
                                     ));
                                 }
@@ -263,6 +280,10 @@ impl<M: ModelName> LanguageModel for OpenAIChatCompletions<M> {
                                 results.push(LanguageModelStreamChunk::Done(AssistantMessage {
                                     content: LanguageModelResponseContentType::Text(String::new()),
                                     usage,
+                                    reasoning_content: {
+                                        let r = std::mem::take(&mut accumulated_reasoning);
+                                        if r.is_empty() { None } else { Some(r) }
+                                    },
                                 }));
                                 results.push(LanguageModelStreamChunk::Delta(
                                     LanguageModelStreamChunkType::Failed(
@@ -280,6 +301,10 @@ impl<M: ModelName> LanguageModel for OpenAIChatCompletions<M> {
                                 results.push(LanguageModelStreamChunk::Done(AssistantMessage {
                                     content: LanguageModelResponseContentType::Text(String::new()),
                                     usage,
+                                    reasoning_content: {
+                                        let r = std::mem::take(&mut accumulated_reasoning);
+                                        if r.is_empty() { None } else { Some(r) }
+                                    },
                                 }));
                             }
                         }

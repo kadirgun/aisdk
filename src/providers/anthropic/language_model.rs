@@ -321,6 +321,7 @@ impl<M: ModelName> LanguageModel for Anthropic<M> {
                                     LanguageModelStreamChunk::Done(AssistantMessage {
                                         content: c.clone(),
                                         usage: state.usage.clone().map(|usage| usage.into()),
+                                        reasoning_content: None,
                                     })
                                 })
                                 .collect()))

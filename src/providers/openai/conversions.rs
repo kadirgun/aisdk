@@ -178,6 +178,8 @@ impl From<ReasoningEffort> for types::ReasoningEffort {
             ReasoningEffort::Low => client::ReasoningEffort::Minimal,
             ReasoningEffort::Medium => client::ReasoningEffort::Medium,
             ReasoningEffort::High => client::ReasoningEffort::High,
+            ReasoningEffort::Max => client::ReasoningEffort::High,
+            ReasoningEffort::XHigh => client::ReasoningEffort::XHigh,
         }
     }
 }

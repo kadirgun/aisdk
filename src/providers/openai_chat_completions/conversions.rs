@@ -24,6 +24,7 @@ impl From<LanguageModelOptions> for client::ChatCompletionsOptions {
                 name: None,
                 tool_calls: None,
                 tool_call_id: None,
+                reasoning_content: None,
             });
         }
 
@@ -77,6 +78,8 @@ impl From<LanguageModelOptions> for client::ChatCompletionsOptions {
                 ReasoningEffort::Low => "low",
                 ReasoningEffort::Medium => "medium",
                 ReasoningEffort::High => "high",
+                ReasoningEffort::Max => "max",
+                ReasoningEffort::XHigh => "xhigh",
             }
             .to_string()
         });
@@ -136,6 +139,7 @@ impl From<Message> for types::ChatMessage {
                 name: None,
                 tool_calls: None,
                 tool_call_id: None,
+                reasoning_content: None,
             },
             Message::User(u) => types::ChatMessage {
                 role: types::Role::User,
@@ -143,47 +147,56 @@ impl From<Message> for types::ChatMessage {
                 name: None,
                 tool_calls: None,
                 tool_call_id: None,
+                reasoning_content: None,
             },
-            Message::Assistant(a) => match a.content {
-                LanguageModelResponseContentType::Text(text) => types::ChatMessage {
-                    role: types::Role::Assistant,
-                    content: Some(text),
-                    name: None,
-                    tool_calls: None,
-                    tool_call_id: None,
-                },
-                LanguageModelResponseContentType::ToolCall(tool_info) => types::ChatMessage {
-                    role: types::Role::Assistant,
-                    content: Some("".to_string()),
-                    name: None,
-                    tool_calls: Some(vec![types::ToolCall {
-                        id: tool_info.tool.id.clone(),
-                        type_: "function".to_string(),
-                        function: types::FunctionCall {
-                            name: tool_info.tool.name.clone(),
-                            arguments: tool_info.input.to_string(),
-                        },
-                    }]),
-                    tool_call_id: None,
-                },
-                LanguageModelResponseContentType::Reasoning { content, .. } => {
-                    // Chat Completions doesn't have separate reasoning messages
-                    // Include as text with prefix
-                    types::ChatMessage {
+            Message::Assistant(a) => {
+                let reasoning_content = a.reasoning_content;
+                match a.content {
+                    LanguageModelResponseContentType::Text(text) => types::ChatMessage {
                         role: types::Role::Assistant,
-                        content: Some(format!("[Reasoning]: {content}")),
+                        content: Some(text),
                         name: None,
                         tool_calls: None,
                         tool_call_id: None,
+                        reasoning_content,
+                    },
+                    LanguageModelResponseContentType::ToolCall(tool_info) => types::ChatMessage {
+                        role: types::Role::Assistant,
+                        content: Some("".to_string()),
+                        name: None,
+                        tool_calls: Some(vec![types::ToolCall {
+                            id: tool_info.tool.id.clone(),
+                            type_: "function".to_string(),
+                            function: types::FunctionCall {
+                                name: tool_info.tool.name.clone(),
+                                arguments: tool_info.input.to_string(),
+                            },
+                        }]),
+                        tool_call_id: None,
+                        reasoning_content,
+                    },
+                    LanguageModelResponseContentType::Reasoning { content, .. } => {
+                        // Chat Completions doesn't have separate reasoning messages
+                        // Include as text with prefix, but also pass reasoning_content
+                        // for providers that require it (e.g. DeepSeek)
+                        types::ChatMessage {
+                            role: types::Role::Assistant,
+                            content: Some(format!("[Reasoning]: {content}")),
+                            name: None,
+                            tool_calls: None,
+                            tool_call_id: None,
+                            reasoning_content: reasoning_content.or(Some(content)),
+                        }
                     }
+                    _ => types::ChatMessage {
+                        role: types::Role::Assistant,
+                        content: None,
+                        name: None,
+                        tool_calls: None,
+                        tool_call_id: None,
+                        reasoning_content,
+                    },
                 }
-                _ => types::ChatMessage {
-                    role: types::Role::Assistant,
-                    content: None,
-                    name: None,
-                    tool_calls: None,
-                    tool_call_id: None,
-                },
             },
             Message::Tool(tool_result) => types::ChatMessage {
                 role: types::Role::Tool,
@@ -196,6 +209,7 @@ impl From<Message> for types::ChatMessage {
                 name: Some(tool_result.tool.name),
                 tool_calls: None,
                 tool_call_id: Some(tool_result.tool.id),
+                reasoning_content: None,
             },
             Message::Developer(d) => types::ChatMessage {
                 role: types::Role::Developer,
@@ -203,6 +217,7 @@ impl From<Message> for types::ChatMessage {
                 name: None,
                 tool_calls: None,
                 tool_call_id: None,
+                reasoning_content: None,
             },
         }
     }

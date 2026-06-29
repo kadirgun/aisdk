@@ -629,6 +629,10 @@ pub enum ReasoningEffort {
     Medium,
     /// High reasoning effort.
     High,
+    /// Maximum reasoning effort (e.g. Deepseek `max`).
+    Max,
+    /// Extra-high reasoning effort (e.g. OpenAI `xhigh`).
+    XHigh,
 }
 
 #[cfg(test)]

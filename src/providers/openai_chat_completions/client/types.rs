@@ -90,6 +90,11 @@ pub(crate) struct ChatMessage {
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_call_id: Option<String>,
+
+    /// Reasoning content for reasoning models (e.g., DeepSeek R1).
+    /// Some providers require this to be sent back in subsequent requests.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reasoning_content: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

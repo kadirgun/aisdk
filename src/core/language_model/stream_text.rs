@@ -126,6 +126,7 @@ impl<M: LanguageModel> LanguageModelRequest<M> {
                                                     Message::Assistant(AssistantMessage {
                                                         content: final_msg.content.clone(),
                                                         usage: final_msg.usage.clone(),
+                                                        reasoning_content: final_msg.reasoning_content.clone(),
                                                     });
                                                 options.messages.push(TaggedMessage::new(
                                                     current_step_id,
@@ -146,6 +147,7 @@ impl<M: LanguageModel> LanguageModelRequest<M> {
                                                             extensions: extensions.clone(),
                                                         },
                                                     usage: final_msg.usage.clone(),
+                                                    reasoning_content: final_msg.reasoning_content.clone(),
                                                     }),
                                                 ));
                                                 options.stop_reason = Some(StopReason::Finish);
@@ -157,11 +159,12 @@ impl<M: LanguageModel> LanguageModelRequest<M> {
                                                 let usage = final_msg.usage.clone();
                                                 let _ = &options.messages.push(TaggedMessage::new(
                                                     current_step_id.to_owned(),
-                                                    Message::Assistant(AssistantMessage::new(
+                                                    Message::Assistant(AssistantMessage::with_reasoning(
                                                         LanguageModelResponseContentType::ToolCall(
                                                             tool_info.clone(),
                                                         ),
                                                         usage,
+                                                        final_msg.reasoning_content.clone(),
                                                     )),
                                                 ));
 

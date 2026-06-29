@@ -406,7 +406,21 @@ pub(crate) trait LanguageModelClient {
         // so providers never receive a spurious NotSupported chunk as the first stream item.
         let mapped_stream = events_stream
             .filter(|e| futures::future::ready(!matches!(e, Ok(Event::Open))))
-            .map(|event_result| Self::parse_stream_sse(event_result));
+            .map(|event_result| {
+                // Handle InvalidStatusCode errors here so the response body is preserved
+                match event_result {
+                    Ok(event) => Self::parse_stream_sse(Ok(event)),
+                    Err(reqwest_eventsource::Error::InvalidStatusCode(status, response)) => {
+                        let body_text =
+                            futures::executor::block_on(response.text()).unwrap_or_default();
+                        Err(Error::ApiError {
+                            status_code: Some(status),
+                            details: format!("HTTP {}: {}", status, body_text),
+                        })
+                    }
+                    Err(e) => Self::parse_stream_sse(Err(e)),
+                }
+            });
 
         // State that indicates if the stream has ended
         let ended = std::sync::Arc::new(std::sync::Mutex::new(false));

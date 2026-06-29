@@ -104,6 +104,7 @@ impl<M: LanguageModel> LanguageModelRequest<M> {
                         let assistant_msg = Message::Assistant(AssistantMessage {
                             content: text.clone().into(),
                             usage: response.usage.clone(),
+                            reasoning_content: None,
                         });
                         options
                             .messages
@@ -119,6 +120,7 @@ impl<M: LanguageModel> LanguageModelRequest<M> {
                                 extensions: extensions.clone(),
                             },
                             usage: response.usage.clone(),
+                            reasoning_content: None,
                         });
                         options
                             .messages

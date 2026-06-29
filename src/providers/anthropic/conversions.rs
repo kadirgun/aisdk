@@ -139,8 +139,8 @@ impl From<LanguageModelOptions> for AnthropicOptions {
             ReasoningEffort::Medium => AnthropicThinking::Enable {
                 budget_tokens: (max_tokens / 2) as usize,
             },
-            // High is 75% of the max_tokens
-            ReasoningEffort::High => AnthropicThinking::Enable {
+            // High is 75% of the max_tokens (also used for Max and XHigh)
+            ReasoningEffort::High | ReasoningEffort::Max | ReasoningEffort::XHigh => AnthropicThinking::Enable {
                 budget_tokens: (max_tokens - (max_tokens / 4)) as usize,
             },
         }));
